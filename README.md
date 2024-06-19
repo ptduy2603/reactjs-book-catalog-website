@@ -1,8 +1,19 @@
-# React + Vite
+Project: Book catalog website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Technologies:
+- ReactJS (Vite)
+- Sass
+- Firestore
 
-Currently, two official plugins are available:
+Features:
+- Render book catalog
+- Group and sort books by year
+- View book's detail
+- Add new books
+- Delete books
+- Recommend a good book
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+How to run project:
+- Step 1: clone this project from github.
+- Step 2: run "npm install" in order to install needed packages.
+- Step 3: run "npm run dev" and then access to localhost in order to test in developed environment.
