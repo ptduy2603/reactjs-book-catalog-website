@@ -1,0 +1,27 @@
+.wrapper {
+  min-width: 100px;
+  border-radius: 4px;
+  background-color: rgb(57, 138, 165);
+  color: #fff;
+  font-size: 1.8rem;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  gap: 4px;
+
+  & + & {
+    margin-left: 8px;
+  }
+
+  &:hover {
+    filter: brightness(0.9);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  & span {
+    flex: 1;
+  }
+}
