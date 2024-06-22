@@ -7,10 +7,12 @@ Technologies:
 
 Features:
 - Render book catalog
-- Group and sort books by year
+- Group and sort books
+- Change grouping criteria (publication year or rating)
 - View book's detail
 - Add new books
 - Delete books
+- Edit books
 - Recommend a good book
 
 How to run project:
