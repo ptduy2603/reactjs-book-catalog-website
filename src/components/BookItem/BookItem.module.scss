@@ -23,7 +23,23 @@
 }
 
 .book__options {
-  font-size: 2.2rem;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book__options button {
+  font-size: 2rem;
+  cursor: pointer;
+  outline: none;
+  background-color: transparent;
+  padding: 4px;
+  display: inline-block;
+
+  & + button {
+    margin-left: 8px;
+  }
 
   &:active {
     transform: scale(0.8);
@@ -54,7 +70,7 @@
   border-radius: 4px;
   position: relative;
   font-size: 1.8rem;
-  min-width: 600px;
+  width: min(600px, 90vw);
 
   & .close__btn {
     position: absolute;

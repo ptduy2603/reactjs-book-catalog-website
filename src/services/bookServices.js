@@ -5,6 +5,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 
 export const fetchBooksFromDatabase = () => {
@@ -26,5 +27,13 @@ export const deleteBookById = async (id) => {
     await deleteDoc(doc(database, "books", id));
   } catch (error) {
     console.error(error);
+  }
+};
+
+export const updateBook = async (book) => {
+  try {
+    await updateDoc(doc(database, "books", book?.id), book);
+  } catch (err) {
+    console.error(err);
   }
 };

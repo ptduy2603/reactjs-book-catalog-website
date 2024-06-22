@@ -12,7 +12,7 @@
 }
 
 .form {
-  min-width: 700px;
+  min-width: min(700px, 80vw);
   border-radius: 4px;
   padding: 16px;
   background-color: #fff;
@@ -40,6 +40,21 @@
     padding: 8px;
     border-radius: 4px;
     font-size: 1.4rem;
+    margin-top: 4px;
+
+    &::placeholder {
+      color: rgba(0, 0, 0, 0.4);
+      font-size: 1.2rem;
+    }
+
+    &.error {
+      border: 1px solid rgb(244, 101, 101);
+      color: #000;
+    }
+
+    &:focus {
+      border: 1px solid #398aa5;
+    }
   }
 }
 

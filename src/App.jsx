@@ -4,20 +4,22 @@ import {
   fetchBooksFromDatabase,
   insertNewBook,
   deleteBookById,
+  updateBook,
 } from "./services/bookServices";
 import Title from "./components/Title";
 import "./assets/styles/main.scss";
 import BookItem from "./components/BookItem";
 import CustomButton from "./components/CustomButton";
-import AddBookModal from "./components/AddBookModal";
+import BookModal from "./components/BookModal";
 import AppLoading from "./components/AppLoading";
 
 function App() {
   const [books, setBooks] = useState([]);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isShowAddBookModal, setIsShowAddBookModal] = useState(false);
+  const [groupCriteria, setGroupCriteria] = useState("publicationYear");
 
-  // function handle covert raw data from firebase to a list of book
+  // function handles covert raw data from firebase to a list of book
   const handleConvertData = useCallback((doc) => {
     const { publication_year, ...rest } = doc.data();
 
@@ -28,7 +30,7 @@ function App() {
     };
   }, []);
 
-  // function handle group book by given criterions
+  // function handles group book by given criterions
   // grouping criteria depends on groupField the argument
   const handleGroupBooks = useCallback((bookList, groupField) => {
     const resultBooks = bookList.reduce((result, currentBook) => {
@@ -43,12 +45,20 @@ function App() {
     return Object.entries(resultBooks);
   }, []);
 
-  // function handle sort books by given criterions
-  const handleSortBooksByYear = useCallback((bookList) => {
-    const result = bookList.map((list) => [list[0], list[1].sort()]);
+  // function handles sort books by given criterions
+  const handleSortBooks = useCallback((bookList) => {
+    const result = bookList.map((list) => [
+      Number(list[0]),
+      list[1].sort((obj1, obj2) => {
+        if (obj1?.name.toLowerCase() > obj2?.name.toLowerCase()) return 1;
+        if (obj1?.name.toLowerCase() < obj2?.name.toLowerCase()) return -1;
+        return 0;
+      }),
+    ]);
     return result.sort((a, b) => a[0] - b[0]).reverse();
   }, []);
 
+  // function handles delete books
   const handleDeleteBook = useCallback(
     async (selectedBook) => {
       const confirmation = window.confirm(
@@ -71,12 +81,35 @@ function App() {
     [books]
   );
 
-  // function handle render books with all of criterions
-  const handleRenderBooks = useCallback(() => {
-    let filteredBooks = books.filter((book) => Boolean(book?.publicationYear));
+  // function handles edit books
+  const handleEditBook = useCallback(
+    async (book) => {
+      console.log("Updated book:", book);
+      try {
+        const { publicationYear, ...rest } = book;
+        const updatedBook = publicationYear
+          ? { publication_year: publicationYear, ...rest }
+          : book;
 
-    filteredBooks = handleGroupBooks(filteredBooks, "publicationYear");
-    filteredBooks = handleSortBooksByYear(filteredBooks);
+        const updatedBooks = books.filter((item) => item?.id !== book?.id);
+        updatedBooks.push(book);
+
+        setBooks(updatedBooks);
+        window.alert("Edit book successfully!");
+        await updateBook(updatedBook);
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [books]
+  );
+
+  // function handles render books with all of criterions
+  const handleRenderBooks = useCallback(() => {
+    let filteredBooks = books.filter((book) => Boolean(book[groupCriteria]));
+
+    filteredBooks = handleGroupBooks(filteredBooks, groupCriteria);
+    filteredBooks = handleSortBooks(filteredBooks);
 
     return filteredBooks.map((list, index) => {
       return (
@@ -89,19 +122,30 @@ function App() {
                 book={book}
                 setBooks={setBooks}
                 handleDeleteBook={handleDeleteBook}
+                handleEditBook={handleEditBook}
               />
             ))}
           </ul>
         </div>
       );
     });
-  }, [books, handleGroupBooks, handleSortBooksByYear, handleDeleteBook]);
+  }, [
+    books,
+    groupCriteria,
+    handleGroupBooks,
+    handleSortBooks,
+    handleEditBook,
+    handleDeleteBook,
+  ]);
 
   // function handles add a new book
   const handleAddNewBook = async (book) => {
     setIsAppLoading(true);
+
     const { publicationYear, ...rest } = book;
-    const newBook = { publication_year: publicationYear, ...rest };
+    const newBook = publicationYear
+      ? { publication_year: publicationYear, ...rest }
+      : book;
 
     try {
       const data = await insertNewBook(newBook);
@@ -113,6 +157,48 @@ function App() {
       setIsAppLoading(false);
       console.error(err);
     }
+  };
+
+  // function handles recommend a good book by given conditions
+  const handleRecommendGoodBook = () => {
+    // A good book should be published at least 3 years ago or earlier
+    const currentYear = new Date().getFullYear();
+    let filteredBooks = books.filter(
+      (book) =>
+        book?.publicationYear && currentYear - book?.publicationYear >= 3
+    );
+
+    // From all these books, pick ones with the highest rating
+    let maxRating = 0;
+    let results = [];
+
+    filteredBooks.forEach((book) => {
+      if (book?.rating && book?.rating > maxRating) {
+        maxRating = book?.rating;
+        results = [];
+        results.push(book);
+      } else if (book?.rating && book?.rating === maxRating) results.push(book);
+    });
+
+    //If there are several good books matching the criteria - pick one at random
+    var goodBook;
+    if (results.length > 1) {
+      // random an integer from 0 to results.length - 1
+      const randomIndex = Math.floor(Math.random() * results.length);
+      goodBook = results?.[randomIndex];
+    } else {
+      goodBook = results?.[0];
+    }
+
+    return goodBook;
+  };
+
+  const handleChangeGroupCriteria = (e) => {
+    setIsAppLoading(true);
+    setTimeout(() => {
+      setIsAppLoading(false);
+      setGroupCriteria(e.target.value);
+    }, 500);
   };
 
   useEffect(() => {
@@ -132,45 +218,6 @@ function App() {
     fetchBooks();
   }, [handleConvertData]);
 
-  // function handles recommend a good book by given conditions
-  const handleRecommendGoodBook = () => {
-    // A good book should be published at least 3 years ago or earlier
-    const currentYear = new Date().getFullYear();
-    let filteredBooks = books.filter(
-      (book) => currentYear - book?.publicationYear >= 3
-    );
-
-    // From all these books, pick ones with the highest rating
-    let maxRating = 0;
-    let results = [];
-
-    filteredBooks.forEach((book) => {
-      if (book?.rating > maxRating) {
-        maxRating = book?.rating;
-        results = [];
-        results.push(book);
-      } else if (book?.rating === maxRating) results.push(book);
-    });
-
-    //If there are several good books matching the criteria - pick one at random
-    var goodBook;
-    if (results.length > 1) {
-      // random an integer from 0 to results.length - 1
-      const randomIndex = Math.floor(Math.random() * results.length);
-      goodBook = results?.[randomIndex];
-    } else {
-      goodBook = results?.[0];
-    }
-
-    window.alert(
-      `Good book for you is : ${goodBook?.name} (${goodBook?.authors.join(
-        ","
-      )}) which has publication year is ${
-        goodBook?.publicationYear
-      } and rating is ${goodBook?.rating}!`
-    );
-  };
-
   return (
     <main className="container">
       <>
@@ -183,37 +230,51 @@ function App() {
             handleOnClick={() => setIsShowAddBookModal(true)}
           />
 
-          <CustomButton
-            title="Recommend a good book"
-            icon={<i className="fa-solid fa-lightbulb"></i>}
-            handleOnClick={handleRecommendGoodBook}
-          />
+          <span className="options__label">Group by : </span>
+          <select
+            defaultValue="publicationYear"
+            name="group_criteria"
+            id="group_criteria"
+            onChange={handleChangeGroupCriteria}
+          >
+            <option value="publicationYear">Publication year</option>
+            <option value="rating">Rating</option>
+          </select>
         </div>
 
         {isAppLoading ? (
           <AppLoading />
         ) : (
           <>
-            <h2>Recommended books</h2>
+            <h2>Recommended book</h2>
+            <BookItem
+              book={handleRecommendGoodBook()}
+              handleDeleteBook={handleDeleteBook}
+              handleEditBook={handleEditBook}
+            />
             {handleRenderBooks()}
 
-            <h2>Books without a year</h2>
+            <h2>
+              Books without{" "}
+              {groupCriteria === "publicationYear" ? "a year" : groupCriteria}
+            </h2>
             <ul className="book__list">
               {books
-                .filter((book) => !book?.publicationYear)
+                .filter((book) => !book[groupCriteria])
                 .map((filteredBook) => (
                   <BookItem
-                    key={filteredBook?.id}
                     book={filteredBook}
-                    setBooks={setBooks}
+                    key={filteredBook?.id}
                     handleDeleteBook={handleDeleteBook}
+                    handleEditBook={handleEditBook}
                   />
                 ))}
             </ul>
 
             {isShowAddBookModal && (
-              <AddBookModal
-                handleAddNewBook={handleAddNewBook}
+              <BookModal
+                formTitle="Add book"
+                handleMainFeature={handleAddNewBook}
                 handleCloseModal={() => setIsShowAddBookModal(false)}
               />
             )}

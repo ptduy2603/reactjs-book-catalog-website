@@ -1,8 +1,11 @@
 import { useState } from "react";
-import styles from "./BookItem.module.scss";
+import PropTypes from "prop-types";
 
-function BookItem({ book, handleDeleteBook }) {
+import styles from "./BookItem.module.scss";
+import BookModal from "../BookModal";
+function BookItem({ book, handleDeleteBook, handleEditBook }) {
   const [isShowDetail, setIsShowDetail] = useState(false);
+  const [isShowEditModal, setIsShowEditModal] = useState(false);
 
   const handleShowBookDetail = () => setIsShowDetail(true);
   const handleHideBookDetail = () => setIsShowDetail(false);
@@ -12,14 +15,26 @@ function BookItem({ book, handleDeleteBook }) {
     handleDeleteBook(book);
   };
 
+  const handleShowEditBookModal = (e) => {
+    e.stopPropagation();
+    setIsShowEditModal(true);
+  };
+
   return (
     <>
       <li className={styles.wrapper} onClick={handleShowBookDetail}>
         <div className={styles["book__info"]}>
           <p className={styles.name}>{book?.name}</p>
         </div>
-        <div className={styles["book__options"]} onClick={handleDeleteBtnClick}>
-          <i className="fa-solid fa-trash"></i>
+
+        <div className={styles["book__options"]}>
+          <button onClick={handleShowEditBookModal}>
+            <i className="fa-solid fa-pen-to-square"></i>
+          </button>
+
+          <button onClick={handleDeleteBtnClick}>
+            <i className="fa-solid fa-trash"></i>
+          </button>
         </div>
       </li>
 
@@ -40,8 +55,23 @@ function BookItem({ book, handleDeleteBook }) {
           </div>
         </div>
       )}
+
+      {isShowEditModal && (
+        <BookModal
+          formTitle="Edit book"
+          initialBook={book}
+          handleCloseModal={() => setIsShowEditModal(false)}
+          handleMainFeature={handleEditBook}
+        />
+      )}
     </>
   );
 }
+
+BookItem.propTypes = {
+  book: PropTypes.object.isRequired,
+  handleDeleteBook: PropTypes.func.isRequired,
+  handleEditBook: PropTypes.func.isRequired,
+};
 
 export default BookItem;
